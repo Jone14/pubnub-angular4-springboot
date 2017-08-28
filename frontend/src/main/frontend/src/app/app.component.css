@@ -66,5 +66,26 @@ textarea {
     border: 1px solid rgb(169, 169, 169);
 }
 ul{
-  list-style: none;
+  /*list-style: none;*/
+}
+.splitContainer {
+  overflow: hidden;
+      width: 100%;
+}
+.left-col {
+  float: left;
+  width: 50%;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+}
+.right-col {
+  float: left;
+  width: 50%;
+  padding-bottom: 500em;
+  margin-bottom: -500em;
+  padding-left: 5px;
+}
+.publishButton {
+	padding-top: 20px;
+	padding-left: 60px;
 }

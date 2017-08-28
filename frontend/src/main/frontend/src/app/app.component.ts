@@ -3,7 +3,6 @@ import { Component, OnInit } from '@angular/core';
 import { Model } from './model';
 
 import { PubNubAngular } from 'pubnub-angular2';
-import { NgxAutoScroll  } from 'ngx-auto-scroll/lib/ngx-auto-scroll.directive';
 
 @Component({
   selector: 'app-root',
@@ -12,11 +11,11 @@ import { NgxAutoScroll  } from 'ngx-auto-scroll/lib/ngx-auto-scroll.directive';
 
 })
 export class AppComponent implements OnInit{
-  title = 'PubNub Console App';
+  title = 'PubNub Console';
   pubnub: PubNubAngular;
   subscribeFlag = false;
   subscribedMessage: any[];
-  model = new Model('pub-c-a74e6807-117b-410d-8bf4-2d9f6e3cfc93', 'sub-c-8258b28e-8282-11e7-91cf-a6a1455b1b30', 'Channel-442bsgjpl', "name=='Joseph'", null, '','test');
+  model = new Model('pub-c-c562f638-b16d-4c25-b35a-f586e8c5d39f', 'sub-c-1d62191a-8714-11e7-ac3a-f2b7c362e666', 'Channel-8hz4d9157', 'language == "english"', null, '','',[], null);
 
   constructor(pubnub: PubNubAngular){
     this.pubnub = pubnub;
@@ -24,7 +23,7 @@ export class AppComponent implements OnInit{
 
   ngOnInit() {  }
 
-  subscribe(model) {
+  subscribe(model, isGroupSubscription) {
 
     this.subscribeFlag = true;
 
@@ -35,7 +34,7 @@ export class AppComponent implements OnInit{
       logVerbosity: false
     });
 
-    this.pubnub.setFilterExpression(model.channel);
+    this.pubnub.setFilterExpression(model.filter);
 
     this.pubnub.addListener({
       message: function(response) {
@@ -82,68 +81,44 @@ export class AppComponent implements OnInit{
         let currentTimetoken = status.currentTimetoken; //The current timetoken fetched in the subscribe response, which is going to be used in the next request, of type long.
         */
         console.log(status);
-        if(!status.error && status.operation==="PNSubscribeOperation"){
+        if(!status.error){
           this.subscribeFlag = true;
-          let consoleLog = "Subscribed Successfully to \n " +
-            "publishKey:\""+this.model.publishKey+"\" \n " +
-            "subscribeKey:\"" +this.model.subscriptionKey+"\" \n" +
-            "channel:\"" +this.model.channel+"\"\n" +
-            "filter:\"" +this.model.filter+"\"\n";
+
           if(this.subscribedMessage) {
-            this.subscribedMessage.push( consoleLog);
+            this.subscribedMessage.push( JSON.stringify(status, null, ' ')+"\n");
           }else {
-            this.subscribedMessage = new Array(consoleLog);
+            this.subscribedMessage = new Array(JSON.stringify(status, null, ' ')+"\n");
           }
-        }else if(status.error && status.operation===""){
-          this.subscribedMessage.push("Un Subscription Failed :: Error Code:"+status.statusCode+"\tError Message:"+status.errorData+"\n");
         }else{
-          this.subscribedMessage.push("Error Response :: Error Code:"+status.statusCode+"\tError Message:"+status.errorData+"\n");
+          this.subscribedMessage.push("Error in :: "+status.operation+" Error Code :: "+status.statusCode+"\n");
         }
       }.bind(this)
     });
 
-    if (model.channel.indexOf(',') > -1) {
-      let seperateChannel = model.channel.split(',');
-      this.pubnub.channelGroups.addChannels({
-          channels: ['my_channel1', 'my_channel2'],
-          channelGroup: model.channelGroup
+  if(isGroupSubscription){
+	  this.pubnub.channelGroups.addChannels({
+		  channels: model.channelGroupArray,
+          channelGroup: model.channelGroup,
+		  triggerEvents: true
         },function(status,response) {
           if (status.error) {
             console.log("operation failed w/ status: ", status);
           } else {
             console.log("operation done!");
-            this.pubnub.channelGroups.listChannels(
-              {
-                channelGroup: model.channelGroup
-              },
-              function (status, response) {
-                if (status.error) {
-                  console.log("operation failed w/ error:", status);
-                  return;
-                }
-                console.log("listing push channel for device")
-                response.channels.forEach( function (channel) {
-                  console.log(channel);
-                });
-              }
-            );
+			this.pubnub.subscribe({
+				channelGroups: [model.channelGroup],
+				triggerEvents: true
+			})
           }
         }.bind(this));
-      // PubNub Subscribe Method for Channel Group
-      this.pubnub.subscribe({
-        channelGroups: [model.channelGroup],
-        triggerEvents: true
-      });
-
-
-    }else{
-      // PubNub Subscribe Method for Channel
-      this.pubnub.subscribe({
-        channels: [model.channel],
-        triggerEvents: true
-      });
-
-    }
+  }else{
+	   this.pubnub.subscribe({
+      channels: [model.channel],
+      triggerEvents: true
+    });
+  }
+	  
+   
   }
 
 
@@ -152,21 +127,17 @@ export class AppComponent implements OnInit{
   unSubscribe() {
 
     this.pubnub.unsubscribeAll();
+	//this.pubnub.unsubscribe({
+    //  channel: this.model.channel
+    //});
     this.pubnub.removeAllListeners();
     this.subscribeFlag = false;
-
-    let consoleLog = "UnSubscribed Successfully to \n " +
-      "publishKey:\""+this.model.publishKey+"\" \n " +
-      "subscribeKey:\"" +this.model.subscriptionKey+"\" \n" +
-      "channel:\"" +this.model.channel+"\"\n" +
-      "filter:\"" +this.model.filter+"\"\n";
-
-    if(this.subscribedMessage) {
-      this.subscribedMessage.push( consoleLog);
-    }else {
-      this.subscribedMessage = new Array(consoleLog);
+	if(this.subscribedMessage) {
+            this.subscribedMessage.push( "Unsubscribed from all the channels and Groups\n");
+          }else {
+            this.subscribedMessage = new Array("Unsubscribed from all the channels and Groups\n");
+          }
     }
-  }
 
   addChannel(channel) {
     if(channel){
@@ -209,15 +180,17 @@ export class AppComponent implements OnInit{
     if(this.IsJsonString(model.message)){
       // PubNub Publish Method
       this.pubnub.publish({
-        channel: model.channel, message: JSON.parse(model.message)
+        channel: model.channel, message: JSON.parse(model.message), meta: JSON.parse(model.metaData)
       },function (status, response) {
         console.log(status);
         console.log(response);
         if(!status.error){
           model.timeToken=response.timetoken;
+		   //this.subscribedMessage.push( JSON.stringify(model.message, null, ' ')+"\n");
           console.log("Published Succesfully !");
         }else{
           console.log("Published Failed !");
+		  //this.subscribedMessage.push("Error in :: "+status.operation+" Error Code :: "+status.statusCode+"\n");
         }
       });
     }else{
@@ -226,7 +199,19 @@ export class AppComponent implements OnInit{
       console.log("Published Failed !");
     }
   }
+  
+  addChannelToGroup(model) {
+	  console.log(model.channel);
+	  
+		  this.model.channelGroupArray.push(this.model.channel);
+		  
+		  if(this.subscribedMessage){
+			this.subscribedMessage.push(this.model.channelGroup+" Channel Group ("+this.model.channelGroupArray.toString()+")\n");  
+		  }else{
+			  this.subscribedMessage = new Array(this.model.channelGroup+" Channel Group ("+this.model.channelGroupArray.toString()+")\n");
+		  }
+  }
 
+  
 
 }
-

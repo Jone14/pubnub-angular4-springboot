@@ -30,33 +30,37 @@
       </div>
     </div>
 
-     <div class="form-group">
+	<div class="splitContainer">
+     <div class="form-group" class="left-col">
       <label for="channelName">Channel Name :</label>
       <input [disabled]="subscribeFlag" [(ngModel)]="model.channel" type="text" class="form-control" id="channelName" required name="channelName" #channelName="ngModel">
-
       <div [hidden]="channelName.valid || channelName.pristine || channelName.dirty"
            class="alert alert-danger">
-        channel Name or Group required
+        channel Name required
       </div>
     </div>
+	<div class="right-col publishButton">
+		<button type="button" [disabled]="subscribeFlag || !model.channelGroup" class="btn btn-default" (click)="addChannelToGroup(model)">Add Channel to Group</button>
+	</div>
+	</div>
+	
 
     <div class="form-group">
       <label for="channelName">Channel Group :</label>
       <input [disabled]="subscribeFlag" [(ngModel)]="model.channelGroup" type="text" class="form-control" id="channelGroup" name="channelGroup">
     </div>
-
-
-
+	
     <div class="form-group">
       <label for="filter">Filter :</label>
       <input [disabled]="subscribeFlag" [(ngModel)]="model.filter" type="text" class="form-control" id="filter" name="filter" #filter="ngModel">
     </div>
 
 
-    <button type="button" [disabled]="subscribeFlag || !model.channel" class="btn btn-default" (click)="subscribe(model)">Subscribe</button>
+    <button type="button" [disabled]="subscribeFlag || !model.channel" class="btn btn-default" (click)="subscribe(model,false)">Subscribe to Channel</button>
+	<button type="button" [disabled]="subscribeFlag || !model.channel" class="btn btn-default" (click)="subscribe(model,true)">Subscribe to Group</button>
     <button type="button" [disabled]="!subscribeFlag" class="btn btn-default" (click)="unSubscribe()">Un Subscribe</button>
 
-    <button type="button" [disabled]="!model.channel || subscribeFlag" class="btn btn-default" (click)="removeChannel(model.channel)">Remove Channel</button>
+    <!-- <button type="button" [disabled]="!model.channel || subscribeFlag" class="btn btn-default" (click)="removeChannel(model.channel)">Remove Channel</button> -->
     <button type="button" [disabled]="subscribeFlag" class="btn btn-default" (click)="removeFilter(model.filter)">Remove Filter</button>
 
     <div class="form-group">
@@ -77,12 +81,21 @@
       <li>{{ item }}</li>
     </ul>
   </div>
-  <p>
+ 
+ <div class="splitContainer">
+  <div class="left-col publishButton">
+  <button type="button" [disabled]="model.message=='' || !subscribeFlag" class="btn btn-default" (click)="publish(model)">Publish</button>
+  </div>
+  <div class="right-col">
+   <div class="form-group">
+      <label for="filter">Meta Data :</label>
+      <input [(ngModel)]="model.metaData" type="text" class="form-control" name="metaData">
+    </div>
+  </div>
+  </div>
+ <p>
     Message to be Published:
   </p>
-  <button type="button" [disabled]="model.message=='' || !subscribeFlag" class="btn btn-default" (click)="publish(model)">Publish</button>
-  <button type="button" [disabled]="model.message=='' || !subscribeFlag" class="btn btn-default" (click)="batchPublish(model)">Batch Publish</button>
-
   <textarea cols="75" rows="10" [(ngModel)]="model.message" class="form-control" required ></textarea>
 
 

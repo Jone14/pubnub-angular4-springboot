@@ -7,7 +7,9 @@ export class Model {
     public filter: string,
     public message: object,
     public timeToken: string,
-    public channelGroup: string
+    public channelGroup: string,
+	public channelGroupArray: any[],
+	public metaData: object
   ) {  }
 
 }

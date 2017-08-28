@@ -4,16 +4,11 @@ import { FormsModule }   from '@angular/forms';
 import { HttpModule }    from '@angular/http';
 
 import { PubNubAngular} from 'pubnub-angular2';
-
 import { AppComponent } from './app.component';
-import { AppDirective } from './app.directive';
-
-
 
 @NgModule({
   declarations: [
-    AppComponent,
-    AppDirective
+    AppComponent
 
   ],
   imports: [
